@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veeva AI Agents</title>
+    <script src="https://res.cdn.office.net/teams-js/2.22.0/js/MicrosoftTeams.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+            background: #F5F5F5;
+            color: #242424;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Header ── */
+        header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 48px;
+            background: #FFFFFF;
+            border-bottom: 1px solid #E0E0E0;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            z-index: 100;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+
+        .app-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #242424;
+            letter-spacing: 0.01em;
+        }
+
+        /* ── Main ── */
+        main {
+            flex: 1;
+            padding: 80px 32px 32px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #242424;
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: #616161;
+            margin-bottom: 32px;
+        }
+
+        /* ── Grid ── */
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        @media (max-width: 900px) {
+            .agents-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 580px) {
+            .agents-grid { grid-template-columns: 1fr; }
+            main { padding: 72px 16px 24px; }
+        }
+
+        /* ── Agent Card ── */
+        .agent-card {
+            background: #FFFFFF;
+            border: 1.5px solid #E0E0E0;
+            border-radius: 8px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .agent-card[data-color="#0F6CBD"]:hover {
+            border-color: rgba(15, 108, 189, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(15, 108, 189, 0.12);
+        }
+
+        .agent-card[data-color="#107C41"]:hover {
+            border-color: rgba(16, 124, 65, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(16, 124, 65, 0.12);
+        }
+
+        .agent-card[data-color="#7B5EA7"]:hover {
+            border-color: rgba(123, 94, 167, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(123, 94, 167, 0.12);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .agent-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .card-title-area { flex: 1; }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #242424;
+            margin-bottom: 3px;
+        }
+
+        .card-subtitle {
+            font-size: 12px;
+            color: #616161;
+        }
+
+        /* ── Tags ── */
+        .card-tags {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.02em;
+        }
+
+        .tag-type { background: #F0F0F0; color: #616161; }
+        .tag-write { background: #FFF4CE; color: #835B00; }
+
+        /* ── Body ── */
+        .card-description {
+            font-size: 13px;
+            color: #616161;
+            line-height: 1.55;
+            margin-bottom: 16px;
+            flex: 1;
+        }
+
+        .capabilities { margin-bottom: 20px; }
+
+        .capabilities-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #616161;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .capabilities-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .capability-item {
+            font-size: 12px;
+            color: #424242;
+            background: #F5F5F5;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        /* ── Button ── */
+        .start-btn {
+            width: 100%;
+            padding: 9px 16px;
+            border: none;
+            border-radius: 4px;
+            background: #6264A7;
+            color: #FFFFFF;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.12s ease;
+        }
+
+        .start-btn:hover  { background: #4F52A0; }
+        .start-btn:active { background: #3D3F8F; }
+
+        /* ── Footer ── */
+        footer {
+            padding: 16px 32px;
+            text-align: center;
+            border-top: 1px solid #E0E0E0;
+            background: #FFFFFF;
+        }
+
+        .footer-text { font-size: 12px; color: #616161; }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: #FFFFFF;
+            border-radius: 8px;
+            width: 440px;
+            max-width: calc(100vw - 32px);
+            padding: 24px;
+            transform: scale(0.96);
+            transition: transform 0.15s ease;
+        }
+
+        .modal-overlay.active .modal { transform: scale(1); }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #242424;
+            margin-bottom: 16px;
+        }
+
+        .modal-warning {
+            display: flex;
+            gap: 10px;
+            padding: 12px;
+            background: #FFF4CE;
+            border: 1px solid #FFD335;
+            border-radius: 4px;
+            margin-bottom: 16px;
+        }
+
+        .modal-warning-icon { font-size: 16px; flex-shrink: 0; }
+
+        .modal-warning-text {
+            font-size: 13px;
+            color: #835B00;
+            line-height: 1.45;
+        }
+
+        .modal-body {
+            font-size: 14px;
+            color: #424242;
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel {
+            padding: 8px 16px;
+            border: 1px solid #E0E0E0;
+            border-radius: 4px;
+            background: #FFFFFF;
+            color: #242424;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .btn-cancel:hover { background: #F5F5F5; }
+
+        .btn-confirm {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background: #6264A7;
+            color: #FFFFFF;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .btn-confirm:hover { background: #4F52A0; }
+    </style>
+</head>
+<body>
+
+<!-- JS 错误横幅：正常情况下隐藏，JS 报错时自动显示 -->
+<div id="js-error-banner" style="display:none;background:#FDE7E9;color:#A4262C;padding:12px 24px;font-size:13px;font-family:monospace;white-space:pre-wrap;"></div>
+
+<header>
+    <span class="app-name">Veeva AI Agents</span>
+</header>
+
+<main>
+    <h1 class="page-title">选择 Agent 开始对话</h1>
+    <p class="page-subtitle">对话以 1:1 私信方式发起，内容仅自己可见</p>
+
+    <div class="agents-grid">
+
+        <!-- Chat Agent -->
+        <div class="agent-card" data-color="#0F6CBD" data-agent="chat" data-name="Chat Agent" data-write="false">
+            <div class="card-header">
+                <div class="agent-icon" style="background:rgba(15,108,189,0.1);color:#0F6CBD;">💬</div>
+                <div class="card-title-area">
+                    <div class="card-title">Chat Agent</div>
+                    <div class="card-subtitle">查询与对话</div>
+                </div>
+            </div>
+            <div class="card-tags">
+                <span class="tag tag-type">查询型</span>
+            </div>
+            <p class="card-description">随时查询客户信息、拜访记录、产品资料和活动数据。</p>
+            <div class="capabilities">
+                <div class="capabilities-title">核心能力</div>
+                <div class="capabilities-list">
+                    <span class="capability-item">HCP 信息查询</span>
+                    <span class="capability-item">拜访记录检索</span>
+                    <span class="capability-item">活动数据查询</span>
+                    <span class="capability-item">拜访前准备</span>
+                </div>
+            </div>
+            <button class="start-btn" onclick="openModal(this.closest('.agent-card'))">发起对话</button>
+        </div>
+
+        <!-- Voice Agent -->
+        <div class="agent-card" data-color="#107C41" data-agent="voice" data-name="Voice Agent" data-write="true">
+            <div class="card-header">
+                <div class="agent-icon" style="background:rgba(16,124,65,0.1);color:#107C41;">🎙️</div>
+                <div class="card-title-area">
+                    <div class="card-title">Voice Agent</div>
+                    <div class="card-subtitle">录入与更新</div>
+                </div>
+            </div>
+            <div class="card-tags">
+                <span class="tag tag-type">操作型</span>
+                <span class="tag tag-write">⚠ 写权限</span>
+            </div>
+            <p class="card-description">通过语音或文字录入拜访笔记、创建 Call 记录、更新 CRM 字段，解放双手。</p>
+            <div class="capabilities">
+                <div class="capabilities-title">核心能力</div>
+                <div class="capabilities-list">
+                    <span class="capability-item">拜访笔记录入</span>
+                    <span class="capability-item">Call 记录创建</span>
+                    <span class="capability-item">CRM 字段更新</span>
+                    <span class="capability-item">医学洞察记录</span>
+                </div>
+            </div>
+            <button class="start-btn" onclick="openModal(this.closest('.agent-card'))">发起对话</button>
+        </div>
+
+        <!-- Insight Agent -->
+        <div class="agent-card" data-color="#7B5EA7" data-agent="insight" data-name="Insight Agent" data-write="false">
+            <div class="card-header">
+                <div class="agent-icon" style="background:rgba(123,94,167,0.1);color:#7B5EA7;">📊</div>
+                <div class="card-title-area">
+                    <div class="card-title">Insight Agent</div>
+                    <div class="card-subtitle">分析与报告</div>
+                </div>
+            </div>
+            <div class="card-tags">
+                <span class="tag tag-type">报告型</span>
+            </div>
+            <p class="card-description">基于 CRM 数据生成 HCP 画像、产品表现和区域洞察报告，辅助业务决策。</p>
+            <div class="capabilities">
+                <div class="capabilities-title">核心能力</div>
+                <div class="capabilities-list">
+                    <span class="capability-item">HCP 洞察报告</span>
+                    <span class="capability-item">产品表现分析</span>
+                    <span class="capability-item">区域业务概览</span>
+                    <span class="capability-item">活动效果评估</span>
+                </div>
+            </div>
+            <button class="start-btn" onclick="openModal(this.closest('.agent-card'))">发起对话</button>
+        </div>
+
+    </div>
+</main>
+
+<footer>
+    <p class="footer-text">🔒 所有对话继承 Veeva China CRM 权限体系，写权限 Agent 执行的操作不可撤销，请谨慎操作。</p>
+</footer>
+
+<!-- Confirmation Modal -->
+<div id="modal-overlay" class="modal-overlay">
+    <div class="modal" role="dialog" aria-modal="true">
+        <div id="modal-title" class="modal-title"></div>
+        <div id="modal-warning" class="modal-warning" style="display:none;">
+            <span class="modal-warning-icon">⚠️</span>
+            <div class="modal-warning-text">
+                <strong>写权限警告：</strong>该 Agent 具有数据写入权限，执行的操作（如创建记录、更新字段）<strong>不可撤销</strong>，请确认后再继续。
+            </div>
+        </div>
+        <p id="modal-body" class="modal-body"></p>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal()">取消</button>
+            <button class="btn-confirm" onclick="startChat()">发起私信对话</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 全局错误捕获，将 JS 异常显示在页面上而非静默失败
+    window.onerror = function(msg, src, line, col, err) {
+        const el = document.getElementById('js-error-banner');
+        if (el) {
+            el.textContent = `JS Error: ${msg} (${src}:${line})`;
+            el.style.display = 'block';
+        }
+        console.error('[TAB ERROR]', msg, src, line, err);
+    };
+
+    // 后端地址：每次 tunnel 更新时改这一行即可
+    const BACKEND_URL = 'https://78crpr69-3978.asse.devtunnels.ms';
+
+    let currentAgentType = null;
+    const botAppId = 'ba242120-9c89-44a6-95c5-b8addaaea89e';
+
+    microsoftTeams.app.initialize()
+        .then(() => console.log('[TAB] Teams SDK initialized'))
+        .catch(err => {
+            console.warn('[TAB] Teams SDK init failed (non-Teams env):', err);
+        });
+
+    function openModal(cardEl) {
+        currentAgentType = cardEl.dataset.agent;
+        const hasWrite = cardEl.dataset.write === 'true';
+
+        document.getElementById('modal-title').textContent =
+            `发起与 ${cardEl.dataset.name} 的对话`;
+
+        document.getElementById('modal-warning').style.display =
+            hasWrite ? 'flex' : 'none';
+
+        document.getElementById('modal-body').textContent =
+            '对话将以 1:1 私信方式发起，内容仅自己可见。';
+
+        document.getElementById('modal-overlay').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('modal-overlay').classList.remove('active');
+        currentAgentType = null;
+    }
+
+    async function startChat() {
+        if (!currentAgentType || !botAppId) return;
+
+        closeModal();
+
+        // 1. 获取当前 Teams 用户的 AAD ID
+        let userAadId = null;
+        try {
+            const ctx = await microsoftTeams.app.getContext();
+            userAadId = ctx.user?.id;
+        } catch (e) {
+            console.warn('[TAB] 无法获取 Teams 用户上下文:', e);
+        }
+
+        // 2. 调用后端发起 Proactive Message（失败静默降级）
+        if (userAadId) {
+            fetch(`${BACKEND_URL}/api/start-session`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ agent_type: currentAgentType, user_aad_id: userAadId }),
+            })
+            .then(r => r.json())
+            .then(result => console.log('[TAB] Proactive:', result))
+            .catch(e => console.warn('[TAB] Proactive 不可用，降级为 deep link:', e));
+        }
+
+        // 3. 无论 Proactive 是否成功，都打开 DM 窗口（导航用户过去）
+        const deepLink = `https://teams.microsoft.com/l/chat/0/0?users=28:${botAppId}`;
+        microsoftTeams.app.openLink(deepLink).catch(() => {
+            window.open(deepLink, '_blank');
+        });
+    }
+
+    document.getElementById('modal-overlay').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeModal();
+    });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeModal();
+    });
+</script>
+
+</body>
+</html>
