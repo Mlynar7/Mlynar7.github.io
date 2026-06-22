@@ -438,8 +438,9 @@
             .catch(e => console.warn('[TAB] Proactive 不可用，降级为 deep link:', e));
         }
 
-        // 3. 无论 Proactive 是否成功，都打开 DM 窗口（导航用户过去）
-        const deepLink = `https://teams.microsoft.com/l/chat/0/0?users=28:${botAppId}`;
+        // 3. 无论 Proactive 是否成功，都打开 DM 窗口，并预填会话启动消息
+        const agentLabel = encodeURIComponent(`启动 Chat Agent`);
+        const deepLink = `https://teams.microsoft.com/l/chat/0/0?users=28:${botAppId}&message=${agentLabel}`;
         microsoftTeams.app.openLink(deepLink).catch(() => {
             window.open(deepLink, '_blank');
         });
