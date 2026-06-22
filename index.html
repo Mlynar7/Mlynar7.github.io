@@ -428,6 +428,8 @@
     async function startChat() {
         if (!currentAgentType || !botAppId) return;
 
+        const agentType = currentAgentType;   // closeModal() 会把 currentAgentType 清掉，先存起来
+
         const confirmBtn = document.querySelector('.btn-confirm');
         confirmBtn.disabled = true;
         confirmBtn.textContent = '正在创建会话…';
@@ -458,7 +460,7 @@
                 const res = await fetch(`${BACKEND_URL}/api/create-session`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ agent_type: currentAgentType, user_aad_id: userAadId }),
+                    body: JSON.stringify({ agent_type: agentType, user_aad_id: userAadId }),
                 });
                 const result = await res.json();
                 dbg(`create-session 响应 ${res.status}: ${JSON.stringify(result)}`);
