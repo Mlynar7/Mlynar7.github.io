@@ -60,19 +60,18 @@
             margin-bottom: 32px;
         }
 
-        /* ── Grid ── */
+        /* ── Single Card Layout ── */
         .agents-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
+            display: flex;
+            justify-content: center;
         }
 
-        @media (max-width: 900px) {
-            .agents-grid { grid-template-columns: repeat(2, 1fr); }
+        .agents-grid .agent-card {
+            width: 100%;
+            max-width: 420px;
         }
 
         @media (max-width: 580px) {
-            .agents-grid { grid-template-columns: 1fr; }
             main { padding: 72px 16px 24px; }
         }
 
@@ -87,22 +86,10 @@
             transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
         }
 
-        .agent-card[data-color="#0F6CBD"]:hover {
+        .agent-card:hover {
             border-color: rgba(15, 108, 189, 0.5);
             transform: translateY(-2px);
             box-shadow: 0 4px 16px rgba(15, 108, 189, 0.12);
-        }
-
-        .agent-card[data-color="#107C41"]:hover {
-            border-color: rgba(16, 124, 65, 0.5);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(16, 124, 65, 0.12);
-        }
-
-        .agent-card[data-color="#7B5EA7"]:hover {
-            border-color: rgba(123, 94, 167, 0.5);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(123, 94, 167, 0.12);
         }
 
         .card-header {
@@ -357,62 +344,12 @@
             <button class="start-btn" onclick="openModal(this.closest('.agent-card'))">发起对话</button>
         </div>
 
-        <!-- Voice Agent -->
-        <div class="agent-card" data-color="#107C41" data-agent="voice" data-name="Voice Agent" data-write="true">
-            <div class="card-header">
-                <div class="agent-icon" style="background:rgba(16,124,65,0.1);color:#107C41;">🎙️</div>
-                <div class="card-title-area">
-                    <div class="card-title">Voice Agent</div>
-                    <div class="card-subtitle">录入与更新</div>
-                </div>
-            </div>
-            <div class="card-tags">
-                <span class="tag tag-type">操作型</span>
-                <span class="tag tag-write">⚠ 写权限</span>
-            </div>
-            <p class="card-description">通过语音或文字录入拜访笔记、创建 Call 记录、更新 CRM 字段，解放双手。</p>
-            <div class="capabilities">
-                <div class="capabilities-title">核心能力</div>
-                <div class="capabilities-list">
-                    <span class="capability-item">拜访笔记录入</span>
-                    <span class="capability-item">Call 记录创建</span>
-                    <span class="capability-item">CRM 字段更新</span>
-                    <span class="capability-item">医学洞察记录</span>
-                </div>
-            </div>
-            <button class="start-btn" onclick="openModal(this.closest('.agent-card'))">发起对话</button>
-        </div>
-
-        <!-- Insight Agent -->
-        <div class="agent-card" data-color="#7B5EA7" data-agent="insight" data-name="Insight Agent" data-write="false">
-            <div class="card-header">
-                <div class="agent-icon" style="background:rgba(123,94,167,0.1);color:#7B5EA7;">📊</div>
-                <div class="card-title-area">
-                    <div class="card-title">Insight Agent</div>
-                    <div class="card-subtitle">分析与报告</div>
-                </div>
-            </div>
-            <div class="card-tags">
-                <span class="tag tag-type">报告型</span>
-            </div>
-            <p class="card-description">基于 CRM 数据生成 HCP 画像、产品表现和区域洞察报告，辅助业务决策。</p>
-            <div class="capabilities">
-                <div class="capabilities-title">核心能力</div>
-                <div class="capabilities-list">
-                    <span class="capability-item">HCP 洞察报告</span>
-                    <span class="capability-item">产品表现分析</span>
-                    <span class="capability-item">区域业务概览</span>
-                    <span class="capability-item">活动效果评估</span>
-                </div>
-            </div>
-            <button class="start-btn" onclick="openModal(this.closest('.agent-card'))">发起对话</button>
-        </div>
 
     </div>
 </main>
 
 <footer>
-    <p class="footer-text">🔒 所有对话继承 Veeva China CRM 权限体系，写权限 Agent 执行的操作不可撤销，请谨慎操作。</p>
+    <p class="footer-text">🔒 所有对话继承 Veeva China CRM 权限体系，数据访问受身份认证保护。</p>
 </footer>
 
 <!-- Confirmation Modal -->
@@ -458,13 +395,11 @@
 
     function openModal(cardEl) {
         currentAgentType = cardEl.dataset.agent;
-        const hasWrite = cardEl.dataset.write === 'true';
 
         document.getElementById('modal-title').textContent =
             `发起与 ${cardEl.dataset.name} 的对话`;
 
-        document.getElementById('modal-warning').style.display =
-            hasWrite ? 'flex' : 'none';
+        document.getElementById('modal-warning').style.display = 'none';
 
         document.getElementById('modal-body').textContent =
             '对话将以 1:1 私信方式发起，内容仅自己可见。';
