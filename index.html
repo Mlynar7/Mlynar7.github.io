@@ -473,7 +473,9 @@
             }
         }
 
-        // 3. 导航到目标聊天（新群聊 or 降级的 1:1 聊天）
+        // 3. 延迟 3 秒让调试面板可读，再导航
+        dbg(`即将跳转: ${deepLink}`);
+        await new Promise(resolve => setTimeout(resolve, 3000));
         microsoftTeams.app.openLink(deepLink).catch(() => {
             window.open(deepLink, '_blank');
         });
