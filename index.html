@@ -194,6 +194,7 @@
 
         .start-btn:hover  { background: #4F52A0; }
         .start-btn:active { background: #3D3F8F; }
+        .start-btn:disabled { background: #9EA0C8; cursor: not-allowed; }
 
         /* ── Footer ── */
         footer {
@@ -415,6 +416,10 @@
     async function startChat() {
         if (!currentAgentType || !botAppId) return;
 
+        const confirmBtn = document.querySelector('.btn-confirm');
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = '正在创建会话…';
+
         closeModal();
 
         // 1. 获取当前 Teams 用户的 AAD ID
@@ -426,24 +431,36 @@
             console.warn('[TAB] 无法获取 Teams 用户上下文:', e);
         }
 
-        // 2. 调用后端发起 Proactive Message（失败静默降级）
+        // 2. 调用后端 Graph API 新建群聊（Centro 模式）
+        let deepLink = `https://teams.microsoft.com/l/chat/0/0?users=28:${botAppId}&message=${encodeURIComponent('启动 Chat Agent')}`;
+
         if (userAadId) {
-            fetch(`${BACKEND_URL}/api/start-session`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ agent_type: currentAgentType, user_aad_id: userAadId }),
-            })
-            .then(r => r.json())
-            .then(result => console.log('[TAB] Proactive:', result))
-            .catch(e => console.warn('[TAB] Proactive 不可用，降级为 deep link:', e));
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/create-session`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ agent_type: currentAgentType, user_aad_id: userAadId }),
+                });
+                const result = await res.json();
+                if (res.ok && result.chat_id) {
+                    // 用精确 chatId 导航到新群聊，Bot 已发好欢迎卡片
+                    deepLink = `https://teams.microsoft.com/l/chat/${encodeURIComponent(result.chat_id)}/0`;
+                    console.log('[TAB] 新群聊已创建:', result.chat_id);
+                } else {
+                    console.warn('[TAB] create-session 失败，降级为 1:1 聊天:', result);
+                }
+            } catch (e) {
+                console.warn('[TAB] create-session 异常，降级为 1:1 聊天:', e);
+            }
         }
 
-        // 3. 无论 Proactive 是否成功，都打开 DM 窗口，并预填会话启动消息
-        const agentLabel = encodeURIComponent(`启动 Chat Agent`);
-        const deepLink = `https://teams.microsoft.com/l/chat/0/0?users=28:${botAppId}&message=${agentLabel}`;
+        // 3. 导航到目标聊天（新群聊 or 降级的 1:1 聊天）
         microsoftTeams.app.openLink(deepLink).catch(() => {
             window.open(deepLink, '_blank');
         });
+
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '发起私信对话';
     }
 
     document.getElementById('modal-overlay').addEventListener('click', e => {
