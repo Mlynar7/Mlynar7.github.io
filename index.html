@@ -429,6 +429,7 @@
         if (!currentAgentType || !botAppId) return;
 
         const agentType = currentAgentType;   // closeModal() 会把 currentAgentType 清掉，先存起来
+        dbg(`agentType=${agentType} | currentAgentType=${currentAgentType} | botAppId=${botAppId}`);
 
         const confirmBtn = document.querySelector('.btn-confirm');
         confirmBtn.disabled = true;
