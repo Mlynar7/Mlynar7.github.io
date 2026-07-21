@@ -402,6 +402,7 @@
 
     microsoftTeams.app.initialize()
         .then(() => console.log('[TAB] Teams SDK initialized'))
+        dbg(`当前页面 origin: ${window.location.origin}`);   // 新增这一行
         .catch(err => {
             console.warn('[TAB] Teams SDK init failed (non-Teams env):', err);
         });
