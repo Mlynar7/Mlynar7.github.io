@@ -437,31 +437,31 @@
 
         closeModal();
 
-        // 1. 获取当前 Teams 用户的 AAD ID
-        let userAadId = null;
+        // 兜底深链接：如果后面任何一步失败，都能降级到普通 1:1 聊天
+        const fallbackLink = `https://teams.microsoft.com/l/chat/0/0?users=28:${botAppId}&message=${encodeURIComponent('启动 Chat Agent')}`;
+        let deepLink = fallbackLink;
+
+        // ========= 1. 获取 SSO Token（关键改动：不再直接信任 getContext 拿到的裸 ID）=========
+        let ssoToken = null;
         try {
-            dbg('正在调用 getContext...');
-            const ctx = await microsoftTeams.app.getContext();
-            userAadId = ctx.user?.id;
-            dbg(`getContext 成功 | userAadId: ${userAadId} | loginHint: ${ctx.user?.loginHint}`);
+            dbg('正在调用 getAuthToken...');
+            ssoToken = await microsoftTeams.authentication.getAuthToken();
+            dbg(`getAuthToken 成功 | token 长度: ${ssoToken.length}`);
         } catch (e) {
-            dbg(`getContext 失败: ${e.message}`);
+            dbg(`getAuthToken 失败: ${e.message}，降级为普通 1:1 聊天`);
         }
 
-        // 2. 调用后端 Graph API 新建群聊（Centro 模式）
-        let deepLink = `https://teams.microsoft.com/l/chat/0/0?users=28:${botAppId}&message=${encodeURIComponent('启动 Chat Agent')}`;
-
-        if (!userAadId) {
-            dbg('userAadId 为空，跳过 create-session，降级为预填消息');
-        }
-
-        if (userAadId) {
+        // ========= 2. 调用后端创建隔离会话（携带 SSO Token，由后端做 OBO 验证）=========
+        if (ssoToken) {
             try {
                 dbg(`调用 ${BACKEND_URL}/api/create-session ...`);
                 const res = await fetch(`${BACKEND_URL}/api/create-session`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ agent_type: agentType, user_aad_id: userAadId }),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${ssoToken}`   // 后端从这里解析出真实、已验证的用户身份
+                    },
+                    body: JSON.stringify({ agent_type: agentType }),
                 });
                 const result = await res.json();
                 dbg(`create-session 响应 ${res.status}: ${JSON.stringify(result)}`);
@@ -476,9 +476,9 @@
             }
         }
 
-        // 3. 延迟 3 秒让调试面板可读，再导航
+        // ========= 3. 延迟片刻让调试面板可读，再跳转 =========
         dbg(`即将跳转: ${deepLink}`);
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 1500));
         microsoftTeams.app.openLink(deepLink).catch(() => {
             window.open(deepLink, '_blank');
         });
