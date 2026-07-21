@@ -402,7 +402,6 @@
 
     microsoftTeams.app.initialize()
         .then(() => console.log('[TAB] Teams SDK initialized'))
-        dbg(`当前页面 origin: ${window.location.origin}`);   // 新增这一行
         .catch(err => {
             console.warn('[TAB] Teams SDK init failed (non-Teams env):', err);
         });
@@ -445,6 +444,8 @@
         // ========= 1. 获取 SSO Token（关键改动：不再直接信任 getContext 拿到的裸 ID）=========
         let ssoToken = null;
         try {
+            dbg(`当前页面 origin: ${window.location.origin}`);   // 新增这一行
+            dbg(`当前页面完整 URL: ${window.location.href}`);      // 再加这一行,信息更全
             dbg('正在调用 getAuthToken...');
             ssoToken = await microsoftTeams.authentication.getAuthToken();
             dbg(`getAuthToken 成功 | token 长度: ${ssoToken.length}`);
